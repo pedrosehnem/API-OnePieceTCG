@@ -1,8 +1,6 @@
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
-//Criar nossa lista
-
 var cartas = new List<CartaDto>
 {
     new CartaDto(1, "Edward Newgate OP17-001"),
@@ -67,9 +65,9 @@ app.MapGet ("/api/cartas/confirmarexclusao/{id:int}", (int id) => {
 int indice = cartas.FindIndex(cartaDaLista => cartaDaLista.Id == id);
     if(indice == -1)
     {
-        return Results.NotFound("Carta não existe, exclusão feita com sucesso!");
+        return Results.NotFound("Carta não existe");
     }
-    return Results.Ok("A carta ainda existe!");
+    return Results.Ok("A carta ainda existe");
 });
 app.Run();
 

@@ -43,3 +43,5 @@ dotnet run
 ```
 
 A API ficará disponível no endereço informado pelo terminal.
+
+Link para o vídeo explicando a API: https://drive.google.com/file/d/1jBip5JQ53p4yxzNvvhRhEpsOierDu8kd/view?usp=sharing
