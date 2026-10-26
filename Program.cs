@@ -1,22 +1,38 @@
+using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddCors();
+
+builder.Services.AddDbContext<ApiDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 var app = builder.Build();
+app.UseDefaultFiles();
+app.UseStaticFiles();
+app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+// var cartas = new List<CartaDto>
+    // {
+    //     new CartaDto(1, "Edward Newgate OP17-001"),
+    //     new CartaDto(2, "Atmos OP17-002")
+    // };
 
-var cartas = new List<CartaDto>
+app.MapGet("/api/cartas", () => "API One Piece TCG está no ar!");
+
+app.MapGet("/api/cartas", async (ApiDbContext db) =>
+    await db.Cartas.ToListAsync());
+
+// app.MapGet("api/cartas/{id:int}", (int id) =>
+// {
+//     var carta = cartas.Find(cartaDaLista => cartaDaLista.Id == id);
+
+//     if (carta is null)
+//     {
+//         return Results.NotFound();
+//     }
+
+//     return Results.Ok(carta);
+// });
+app.MapGet("/api/cartas/{id:int}", async (int id, ApiDbContext db) =>
 {
-    new CartaDto(1, "Edward Newgate OP17-001"),
-    new CartaDto(2, "Atmos OP17-002")
-};
-
-app.MapGet("/", () => "Lista da cartas de One Piece TCG está no ar!");
-
-app.MapGet("/api/cartas", () =>
-{
-    return Results.Ok(cartas);  
-});
-
-app.MapGet("api/cartas/{id:int}", (int id) =>
-{
-    var carta = cartas.Find(cartaDaLista => cartaDaLista.Id == id);
+    var carta = await db.Cartas.FindAsync(id);
 
     if (carta is null)
     {
@@ -25,21 +41,14 @@ app.MapGet("api/cartas/{id:int}", (int id) =>
 
     return Results.Ok(carta);
 });
-
-app.MapPost("/api/cartas", (CartaEntradaDto dados) =>
+app.MapPost("/api/cartas", async (CartaEntity carta, ApiDbContext db) =>
 {
-    int proximoId = cartas.Count == 0
-        ? 1
-        : cartas.Max(carta => carta.Id) + 1;
-
-    var novaCarta = new CartaDto(proximoId, dados.NomeDaCarta);
-
-    cartas.Add(novaCarta);
-
-    return Results.Created($"/api/cartas/{novaCarta.Id}", novaCarta);
+    db.Cartas.Add(carta);
+    await db.SaveChangesAsync();
+    return Results.Created($"/api/cartas/{carta.Id}", carta);
 });
 
-app.MapPut("/api/cartas/{id:int}", (int id, CartaEntradaDto dados) =>
+/* app.MapPut("/api/cartas/{id:int}", (int id, CartaEntradaDto dados) =>
 {
     int indice = cartas.FindIndex(cartaDaLista => cartaDaLista.Id == id);
     if(indice == -1)
@@ -49,27 +58,54 @@ app.MapPut("/api/cartas/{id:int}", (int id, CartaEntradaDto dados) =>
     var cartaAtualizada = new CartaDto(id, dados.NomeDaCarta);
     cartas[indice] = cartaAtualizada;
     return Results.Ok(cartaAtualizada);
-});
+}); */
 
-app.MapDelete("/api/cartas/{id:int}", (int id) =>
+app.MapPut("/api/cartas/{id:int}", async (int id, CartaEntity dados, ApiDbContext db) =>
 {
-    int indice = cartas.FindIndex(cartaDaLista => cartaDaLista.Id == id);
-    if(indice == -1)
+    var carta = await db.Cartas.FindAsync(id);
+    if (carta is null)
     {
         return Results.NotFound();
     }
-    cartas.RemoveAt(indice);
-    return Results.NoContent();
+    carta.NomeDaCarta = dados.NomeDaCarta;
+    await db.SaveChangesAsync();
+    return Results.Ok(carta);
+
 });
-app.MapGet ("/api/cartas/confirmarexclusao/{id:int}", (int id) => {
-int indice = cartas.FindIndex(cartaDaLista => cartaDaLista.Id == id);
-    if(indice == -1)
-    {
-        return Results.NotFound("Carta não existe");
-    }
-    return Results.Ok("A carta ainda existe");
+
+
+app.MapDelete("/api/cartas/{id:int}", async (int id, ApiDbContext db) =>
+{
+  var carta = await db.Cartas.FindAsync(id);
+  if (carta is null) return Results.NotFound();
+  db.Cartas.Remove(carta);
+  await db.SaveChangesAsync();
+  return Results.NoContent();
+
 });
+// app.MapGet ("/api/cartas/confirmarexclusao/{id:int}", (int id) => {
+// int indice = cartas.FindIndex(cartaDaLista => cartaDaLista.Id == id);
+//     if(indice == -1)
+//     {
+//         return Results.NotFound("Carta não existe");
+//     }
+//     return Results.Ok("A carta ainda existe");
+// });
 app.Run();
 
-record CartaDto(int Id, string NomeDaCarta);
-record CartaEntradaDto(string NomeDaCarta);
+class CartaEntity
+{
+    public int Id { get; set; }
+    public string NomeDaCarta { get; set; } = string.Empty;
+}
+
+class ApiDbContext : DbContext
+{
+    public ApiDbContext(DbContextOptions<ApiDbContext> options) : base(options)
+    {
+    }
+
+    public DbSet<CartaEntity> Cartas => Set<CartaEntity>();
+}
+//record CartaDto(int Id, string NomeDaCarta);
+//record CartaEntradaDto(string NomeDaCarta);
