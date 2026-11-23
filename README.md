@@ -1,106 +1,90 @@
 # API de Cartas — One Piece TCG
 
-Projeto desenvolvido para a disciplina de Back-end, utilizando C# e ASP.NET Core (.NET 10) com Minimal API.
+Projeto acadêmico desenvolvido para a disciplina de **Desenvolvimento Back-end**, utilizando **C#**, **ASP.NET Core (.NET 10)** e **Minimal API**.
 
-A aplicação consiste em uma API REST para o cadastro e gerenciamento de cartas do One Piece Card Game, permitindo realizar operações CRUD (Create, Read, Update e Delete).
+A aplicação disponibiliza uma API REST para cadastro e gerenciamento de cartas do **One Piece Card Game**, com operações CRUD (*Create, Read, Update e Delete*), armazenamento persistente em SQLite e uma interface web em HTML, CSS e JavaScript.
 
-Na AP2, o projeto foi ampliado com a implementação de persistência de dados utilizando Entity Framework Core e SQLite, substituindo o armazenamento temporário em memória da AP1.
+## Evolução do projeto
 
-Também foi desenvolvido um frontend utilizando HTML, CSS e JavaScript, permitindo realizar as operações diretamente pelo navegador, através de requisições HTTP à API.
+- **AP1:** implementação inicial das rotas CRUD com uma lista em memória.
+- **AP2:** integração com Entity Framework Core e SQLite, criação de migrations e frontend para consumir a API.
+- **AS (avaliação semestral):** organização dos tipos em pastas e arquivos, manutenção do CRUD persistente, confirmação de ausência de carta por HTTP 404, tratamento global de exceções e testes no Bruno.
+
+O tema, as funcionalidades e o repositório original foram preservados ao longo das avaliações.
 
 ## Funcionalidades
 
-- Verificar o funcionamento da API.
+- Verificar se a API está em execução.
 - Listar todas as cartas cadastradas.
-- Buscar uma carta pelo ID.
+- Consultar uma carta pelo ID.
 - Cadastrar novas cartas.
-- Atualizar o nome de uma carta existente.
-- Excluir cartas cadastradas.
-- Confirmar a exclusão consultando o ID removido (HTTP 404).
-- Persistir os registros no SQLite, mantendo os dados após reiniciar a aplicação.
-- Gerenciar as cartas através do frontend integrado à API.
+- Atualizar o nome de uma carta.
+- Excluir uma carta pelo ID.
+- Consultar um endpoint de **confirmação de exclusão**, verificando se o ID não está mais no banco (HTTP 404).
+- Armazenar dados no SQLite, preservando os registros após reiniciar a aplicação.
+- Tratar exceções inesperadas com uma resposta HTTP 500 padronizada.
+- Realizar operações pela interface web e testar os endpoints pelo Bruno.
 
-## Tecnologias utilizadas
+## Tecnologias e ferramentas
 
-### Backend
-- C#
-- .NET 10
-- ASP.NET Core Minimal API
-- Entity Framework Core
-- SQLite
-- Migrations
-- HTTP e JSON
+**Backend:** C#, .NET 10, ASP.NET Core Minimal API, Entity Framework Core, SQLite, migrations, HTTP e JSON.
 
-### Frontend
-- HTML5
-- CSS3
-- JavaScript
-- Fetch API
+**Frontend:** HTML5, CSS3, JavaScript e Fetch API.
 
-### Ferramentas
-- Visual Studio Code
-- Bruno (testes HTTP)
-- Git
-- GitHub
+**Desenvolvimento e testes:** Visual Studio Code, Bruno, Git e GitHub.
 
-## Estrutura e persistência dos dados
+## Organização do projeto
 
-A persistência é realizada utilizando o Entity Framework Core, responsável pelo mapeamento entre os objetos C# e o banco de dados SQLite.
+Estrutura dos principais componentes:
 
-O projeto utiliza os seguintes componentes:
+```text
+API-OnePieceTCG/
+├── Data/
+│   └── ApiDbContext.cs
+├── DTOs/
+│   ├── CartaDTO.cs
+│   └── CartaEntradaDto.cs
+├── Models/
+│   └── CartaEntity.cs
+├── Migrations/
+│   ├── 20261013154404_BancoInicial.cs
+│   ├── 20261013154404_BancoInicial.Designer.cs
+│   └── ApiDbContextModelSnapshot.cs
+├── wwwroot/                  # Arquivos da interface web
+├── bruno/                    # Requisições de teste
+├── Program.cs
+├── appsettings.json
+└── ApiOnePieceTCG.csproj
+```
 
-- **CartaEntity (Model):** define a estrutura dos dados das cartas, contendo ID e nome.
-- **ApiDbContext:** gerencia a comunicação da aplicação com o banco por meio do Entity Framework Core.
-- **DbSet:** representa o conjunto de cartas disponíveis para consulta e manipulação.
-- **SQLite:** armazena os registros permanentemente em um arquivo local.
-- **Migrations:** permitem criar e atualizar a estrutura do banco de dados.
+- **Models (`CartaEntity`):** representa a carta armazenada no banco, com `Id` e `NomeDaCarta`.
+- **DTOs (`CartaEntradaDto` e `CartaDTO`):** tipos usados para organizar a transferência de dados, separando-a da entidade persistida. O DTO de entrada permite receber o nome da carta sem exigir seu ID.
+- **Data (`ApiDbContext`):** contexto do Entity Framework Core, responsável por gerenciar as operações de persistência. O `DbSet<CartaEntity> Cartas` representa o conjunto de cartas.
+- **Migrations:** registram a estrutura do banco e permitem aplicá-la ou evoluí-la. A migration inicial é chamada `BancoInicial`.
+- **Namespaces:** organizam os tipos logicamente, enquanto os `using` permitem utilizá-los nos demais arquivos.
+- **Program.cs:** configura a aplicação, registra o contexto, define os middlewares e mapeia os endpoints.
+- **wwwroot:** contém os arquivos estáticos do frontend, servidos pela própria aplicação.
+- **bruno:** guarda as requisições utilizadas nos testes HTTP.
 
-As operações de cadastro, atualização e exclusão são persistidas utilizando o método `SaveChangesAsync()`.
+O EF Core traduz operações sobre objetos C# em comandos para o SQLite. Alterações de cadastro, edição e exclusão são efetivadas com `SaveChangesAsync()`.
 
-Diferentemente da AP1, que utilizava uma lista em memória, os dados agora são armazenados em um banco SQLite, permanecendo disponíveis mesmo após o encerramento da aplicação.
+## Endpoints da API
 
-## Rotas da API
-
-| Método | Endpoint | Funcionalidade | Resposta HTTP |
+| Método | Rota | Descrição | Resposta esperada |
 |---|---|---|---|
-| GET | `/api/cartas` | Listar todas as cartas | 200 |
-| GET | `/api/cartas/{id}` | Buscar carta pelo ID | 200 ou 404 |
-| POST | `/api/cartas` | Cadastrar uma nova carta | 201 |
-| PUT | `/api/cartas/{id}` | Atualizar uma carta existente | 200 ou 404 |
-| DELETE | `/api/cartas/{id}` | Excluir uma carta | 204 ou 404 |
+| GET | `/api/status` | Verifica se a API está em execução | 200 OK |
+| GET | `/api/cartas` | Lista as cartas | 200 OK |
+| GET | `/api/cartas/{id}` | Busca uma carta pelo ID | 200 OK ou 404 Not Found |
+| POST | `/api/cartas` | Cadastra uma carta | 201 Created |
+| PUT | `/api/cartas/{id}` | Atualiza o nome de uma carta | 200 OK ou 404 Not Found |
+| DELETE | `/api/cartas/{id}` | Exclui uma carta | 204 No Content ou 404 Not Found |
+| GET | `/api/cartas/confirmarexclusao/{id}` | Verifica se a carta ainda existe | 200 OK ou 404 Not Found |
 
-### GET — Listar cartas
+### Cadastro de carta — POST
 
-Retorna todas as cartas cadastradas no banco de dados.
+**Rota:** `POST /api/cartas`
 
-Endpoint:
-
-`GET /api/cartas`
-
-Resposta esperada: HTTP 200 OK.
-
-### GET — Buscar carta por ID
-
-Consulta uma carta específica através do seu identificador.
-
-Endpoint:
-
-`GET /api/cartas/{id}`
-
-Respostas possíveis:
-
-- HTTP 200 OK: carta encontrada.
-- HTTP 404 Not Found: carta inexistente.
-
-### POST — Cadastrar carta
-
-Cadastra uma nova carta no banco de dados.
-
-Endpoint:
-
-`POST /api/cartas`
-
-Exemplo de JSON:
+Exemplo de corpo JSON:
 
 ```json
 {
@@ -108,19 +92,13 @@ Exemplo de JSON:
 }
 ```
 
-O ID é gerado automaticamente pelo banco de dados.
+**Resposta esperada:** `201 Created`, com os dados da carta cadastrada e o ID gerado pelo banco.
 
-Resposta esperada: HTTP 201 Created.
+### Atualização de carta — PUT
 
-### PUT — Atualizar carta
+**Rota:** `PUT /api/cartas/{id}`
 
-Atualiza o nome de uma carta já cadastrada.
-
-Endpoint:
-
-`PUT /api/cartas/{id}`
-
-Exemplo de JSON:
+Exemplo de corpo JSON:
 
 ```json
 {
@@ -128,51 +106,67 @@ Exemplo de JSON:
 }
 ```
 
-Respostas possíveis:
+**Respostas esperadas:** `200 OK` se a carta existir; `404 Not Found` se o ID não for encontrado.
 
-- HTTP 200 OK: carta atualizada.
-- HTTP 404 Not Found: carta inexistente.
+### Exclusão — DELETE
 
-### DELETE — Excluir carta
+**Rota:** `DELETE /api/cartas/{id}`
 
-Remove uma carta do banco de dados através do seu ID.
+A API procura a carta, remove o registro e salva a alteração no SQLite. Retorna `204 No Content` em caso de sucesso ou `404 Not Found` se o ID não existir.
 
-Endpoint:
+### Confirmação de exclusão — GET
 
-`DELETE /api/cartas/{id}`
+**Rota:** `GET /api/cartas/confirmarexclusao/{id}`
 
-Respostas possíveis:
+Após executar o DELETE, uma nova requisição consulta a existência da carta no banco utilizando o ID removido.
 
-- HTTP 204 No Content: exclusão realizada.
-- HTTP 404 Not Found: carta inexistente.
+- **200 OK:** a carta ainda existe.
+- **404 Not Found:** a carta não foi encontrada no banco.
 
-### Confirmação de exclusão
+Exemplo de corpo retornado quando a carta não é encontrada:
 
-Após excluir uma carta, é realizada uma nova consulta GET pelo mesmo ID.
+```json
+{
+  "mensagem": "Carta não encontrada. Exclusão confirmada."
+}
+```
 
-Caso a exclusão tenha sido realizada corretamente, a API retorna HTTP 404 Not Found, confirmando que o registro não existe mais no banco de dados.
+**Observação:** o código 404 confirma que o registro está ausente, mas, isoladamente, não diferencia uma carta excluída de um ID que nunca existiu. No teste, a confirmação é realizada após cadastrar e excluir uma carta conhecida.
 
-Essa verificação utiliza o próprio endpoint GET por ID, sem a necessidade de criar uma rota adicional.
+## Tratamento global de exceções
 
-## Como executar o projeto
+A API utiliza o middleware `UseExceptionHandler` no `Program.cs` para capturar exceções não tratadas durante o processamento das requisições. Quando ocorre uma falha interna, ele retorna uma resposta padronizada, sem expor detalhes técnicos ao cliente.
+
+**Status:** `500 Internal Server Error`
+
+**Corpo JSON:**
+
+```json
+{
+  "mensagem": "Ocorreu um erro interno. Tente novamente mais tarde."
+}
+```
+
+O middleware não impede a ocorrência da falha: ele trata a resposta HTTP gerada a partir dela. Situações normais, como consultar um ID inexistente, são respondidas com `404 Not Found` pelo próprio endpoint, sem depender do tratamento de exceções.
+
+### Demonstração do tratamento de erro
+
+Para testar uma exceção real, foi alterado **temporariamente** o caminho do arquivo SQLite na connection string `DefaultConnection`, apontando para uma pasta inexistente. Após reiniciar a aplicação, a requisição `GET /api/cartas` gerou uma falha de acesso ao banco, capturada pelo middleware, que respondeu com `500` e o JSON personalizado.
+
+Após o teste, a connection string original foi restaurada e a consulta voltou a funcionar normalmente. Nenhuma alteração permanente na conexão é necessária para executar o projeto.
+
+## Como executar
 
 ### 1. Pré-requisitos
 
-Para executar a aplicação, é necessário possuir:
-
-- .NET SDK 10 instalado.
-- Git instalado.
-- Ferramenta dotnet-ef para executar as migrations.
+- .NET SDK 10.
+- Git.
+- Ferramenta `dotnet-ef` para aplicar as migrations, caso ainda não esteja disponível.
 
 ### 2. Clonar o repositório
 
 ```bash
 git clone https://github.com/pedrosehnem/API-OnePieceTCG.git
-```
-
-Entrar na pasta do projeto:
-
-```bash
 cd API-OnePieceTCG
 ```
 
@@ -184,7 +178,7 @@ dotnet restore
 
 ### 4. Preparar o banco SQLite
 
-Caso a ferramenta do Entity Framework Core ainda não esteja instalada:
+Caso necessário, instalar a ferramenta:
 
 ```bash
 dotnet tool install --global dotnet-ef --version "10.*"
@@ -196,142 +190,72 @@ Aplicar as migrations existentes:
 dotnet ef database update
 ```
 
-Esse comando prepara o banco SQLite conforme a estrutura definida nas migrations do projeto.
+O comando cria ou atualiza a estrutura do banco definida pelas migrations. A conexão utilizada pela aplicação é lida de `ConnectionStrings:DefaultConnection` nas configurações.
 
-A migration inicial, denominada `BancoInicial`, é responsável pela criação da tabela `Cartas`, contendo os campos `Id` e `NomeDaCarta`.
-
-O arquivo local do banco SQLite não é incluído no repositório, pois pode ser recriado a partir das migrations.
-
-### 5. Compilar o projeto
+### 5. Compilar e executar
 
 ```bash
 dotnet build
-```
-
-### 6. Executar a aplicação
-
-```bash
 dotnet run
 ```
 
-A aplicação ficará disponível no endereço informado pelo terminal.
+A URL local será informada no terminal. Utilize esse endereço tanto no navegador quanto no Bruno.
 
 ## Frontend integrado
 
-O projeto possui uma interface desenvolvida com HTML, CSS e JavaScript.
+A interface foi desenvolvida com HTML, CSS e JavaScript e consome os endpoints por meio da Fetch API. Os arquivos estáticos são servidos pela própria aplicação ASP.NET Core, a partir de `wwwroot`.
 
-O frontend utiliza a Fetch API para realizar requisições HTTP aos endpoints do backend.
+O frontend permite consultar, cadastrar, editar e excluir cartas, além de atualizar a listagem e realizar a verificação de ausência após uma exclusão. Não foi necessário criar um novo frontend para a AS.
 
-A interface permite:
+## Testes com Bruno
 
-- Visualizar todas as cartas cadastradas.
-- Cadastrar novas cartas.
-- Buscar cartas pelo ID.
-- Editar o nome de cartas existentes.
-- Excluir cartas.
-- Confirmar a exclusão através de uma consulta ao ID removido.
-- Atualizar a listagem de cartas.
+As requisições HTTP foram testadas com o **Bruno**, e os arquivos da collection são mantidos no repositório para permitir a reprodução dos testes.
 
-Todas as operações utilizam os endpoints reais da API, sem depender de dados simulados.
+### Fluxo de teste do CRUD
 
-Para atender ao requisito de mesma origem da AP2, o frontend deve ser servido pela própria aplicação ASP.NET Core, utilizando os arquivos estáticos da pasta `wwwroot`.
-
-Com essa configuração, basta iniciar a API e acessar seu endereço local no navegador para utilizar a interface.
-
-## Testes da API
-
-Os testes dos endpoints são realizados utilizando o Bruno.
-
-A Collection de testes deve conter:
-
-1. GET — Listar todas as cartas.
-2. GET — Buscar uma carta por ID.
-3. POST — Cadastrar uma nova carta.
-4. PUT — Atualizar uma carta existente.
-5. DELETE — Excluir uma carta.
-
-### Procedimento de teste
-
-1. Executar POST para cadastrar uma carta.
-2. Executar GET para verificar se a carta aparece na listagem.
-3. Executar GET por ID para consultar a carta cadastrada.
-4. Executar PUT para modificar o nome da carta.
-5. Executar GET novamente para confirmar a atualização.
-6. Executar DELETE para excluir a carta.
-7. Executar GET pelo ID excluído e verificar o retorno HTTP 404.
-
-Os mesmos procedimentos também podem ser realizados através da interface do frontend.
-
-## Persistência dos dados
-
-Na AP1, a API utilizava uma lista em memória para armazenar as cartas.
-
-Na AP2, o armazenamento foi substituído pelo banco de dados SQLite, utilizando Entity Framework Core.
-
-O processo de persistência funciona da seguinte forma:
-
-1. A API recebe uma requisição HTTP.
-2. Os dados são representados por objetos da classe CartaEntity.
-3. O ApiDbContext gerencia as operações utilizando o Entity Framework Core.
-4. O EF Core realiza as operações necessárias no SQLite.
-5. As alterações são gravadas permanentemente no banco de dados.
-
-Nas operações de cadastro, atualização e exclusão, o método SaveChangesAsync() é responsável por efetivar as alterações no banco.
+1. Executar `POST /api/cartas` e verificar `201 Created`.
+2. Executar `GET /api/cartas` e verificar `200 OK`.
+3. Consultar a carta cadastrada com `GET /api/cartas/{id}` e verificar `200 OK`.
+4. Executar `PUT /api/cartas/{id}` e verificar `200 OK`.
+5. Consultar novamente a carta para conferir a atualização.
+6. Executar `DELETE /api/cartas/{id}` e verificar `204 No Content`.
+7. Executar `GET /api/cartas/confirmarexclusao/{id}` e verificar `404 Not Found`.
+8. Testar um ID inexistente nas operações de busca, edição e exclusão e verificar os retornos `404` correspondentes.
 
 ### Teste de persistência
 
-Para comprovar a persistência dos dados:
+1. Cadastrar uma carta.
+2. Consultar o registro no Bruno ou na interface.
+3. Encerrar a aplicação e iniciá-la novamente.
+4. Consultar a listagem e confirmar que a carta continua armazenada no SQLite.
 
-1. Cadastrar uma nova carta.
-2. Consultar a carta pelo Bruno ou pelo frontend.
-3. Encerrar a execução da API.
-4. Iniciar novamente a aplicação.
-5. Consultar a listagem de cartas.
-6. Verificar se a carta cadastrada anteriormente continua disponível.
+### Teste do middleware
 
-Esse procedimento demonstra que os registros são armazenados no SQLite e não dependem da memória temporária da aplicação.
+1. Apontar temporariamente a connection string para um caminho inválido do SQLite.
+2. Reiniciar a aplicação e executar `GET /api/cartas` no Bruno, **sem corpo JSON**.
+3. Verificar o retorno `500 Internal Server Error` com a mensagem padronizada.
+4. Restaurar a configuração original e confirmar que a API voltou a responder normalmente.
 
-## Organização do projeto
+## Histórico de demonstrações
 
-O repositório contém os principais componentes necessários para executar e testar a aplicação:
+### AS — avaliação semestral
 
-- Código-fonte do backend ASP.NET Core.
-- Model CartaEntity.
-- ApiDbContext e configuração do Entity Framework Core.
-- Arquivos do frontend (HTML, CSS e JavaScript).
-- Migrations para criação da estrutura do SQLite.
-- Arquivo .csproj com as dependências.
-- Collection de testes HTTP do Bruno.
-- README com instruções de execução e documentação da API.
+A demonstração final apresenta a organização dos arquivos em `Models`, `DTOs` e `Data`, a função das migrations e namespaces, o CRUD persistente, a confirmação de exclusão com `404` e o tratamento de exceções com `500`.
 
-Os arquivos temporários de compilação, como `bin/` e `obj/`, e o banco SQLite local com dados de teste não devem ser versionados.
+**Link do vídeo da AS:** https://drive.google.com/file/d/1QwemlUXWfclO3T5vrbEG8xXFlT0aHj1c/view?usp=sharing
 
-## Vídeo de demonstração — AP2
+### AP2 — persistência e frontend
 
-Link do Vídeo: https://drive.google.com/file/d/1YZP21NBrdICrHzPj0ZTUb7P7vLEXeYGH/view?usp=sharing
+[Assistir à demonstração da AP2](https://drive.google.com/file/d/1YZP21NBrdICrHzPj0ZTUb7P7vLEXeYGH/view?usp=sharing)
 
-A demonstração apresenta:
+A AP2 apresentou a integração com Entity Framework Core e SQLite, as operações CRUD no Bruno, a interface web e a persistência dos dados.
 
-- Organização do projeto e do repositório.
-- Funcionamento da API com Entity Framework Core e SQLite.
-- Explicação do Model e do DbContext.
-- Execução das operações CRUD pelo Bruno.
-- Demonstração dos códigos de resposta HTTP.
-- Confirmação de exclusão através do retorno HTTP 404.
-- Integração do frontend com os endpoints reais.
-- Cadastro, listagem, edição e exclusão pelo navegador.
-- Persistência dos registros após reiniciar a aplicação.
-
-O vídeo deve estar disponível através de um link público, sem necessidade de solicitar permissão de acesso.
-
-## Vídeo de demonstração — AP1
-
-A primeira versão do projeto utilizava uma lista em memória para realizar as operações CRUD.
-
-O vídeo abaixo apresenta o funcionamento inicial da API, antes da implementação da persistência com SQLite.
+### AP1 — versão inicial
 
 [Assistir à demonstração da AP1](https://drive.google.com/file/d/1jBip5JQ53p4yxzNvvhRhEpsOierDu8kd/view?usp=sharing)
 
+A AP1 apresentou as primeiras rotas e operações CRUD com armazenamento temporário em memória.
+
 ---
 
-Projeto acadêmico desenvolvido para a disciplina de Back-end — AP1 e AP2.
+Projeto acadêmico desenvolvido para a disciplina de Desenvolvimento Back-end — **AP1, AP2 e AS**.
